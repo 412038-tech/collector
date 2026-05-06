@@ -1,1 +1,180 @@
-ynmjdtynjmusktdhfygjsdzb
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
+import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
+import { 
+  LogIn, LogOut, Plus, Image as ImageIcon, Music, 
+  LayoutDashboard, Users, TrendingUp, Search, Play
+} from 'lucide-react';
+
+// --- Firebase 設定 ---
+const firebaseConfig = {
+  apiKey: "AIzaSyAwx54j4n9ijwh4yJJzKoSe5aBVF0URBSc",
+  authDomain: "collector-33e70.firebaseapp.com",
+  projectId: "collector-33e70",
+  storageBucket: "collector-33e70.firebasestorage.app",
+  messagingSenderId: "210743598886",
+  appId: "1:210743598886:web:ebfc3fbdf493f8d9a46be7"
+};
+
+// 初始化 Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+
+const App = () => {
+  const [user, setUser] = useState(null);
+  const [activeMenu, setActiveMenu] = useState('控制面板');
+  const [myCollections, setMyCollections] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // 監聽登入狀態
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) fetchCollections(currentUser.uid);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Google 登入
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("登入失敗:", error);
+    }
+  };
+
+  // 登出
+  const handleLogout = () => signOut(auth);
+
+  // 讀取 Firestore 資料
+  const fetchCollections = async (uid) => {
+    const q = query(collection(db, "collections"), where("userId", "==", uid));
+    const querySnapshot = await getDocs(q);
+    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setMyCollections(data);
+  };
+
+  // 圖片轉 Base64 並上傳 Firestore
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result;
+      await uploadToFirestore(base64String);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadToFirestore = async (base64Data) => {
+    if (!user) return alert("請先登入！");
+    setLoading(true);
+    try {
+      await addDoc(collection(db, "collections"), {
+        userId: user.uid,
+        title: "新收藏項目",
+        image: base64Data, // 儲存 Base64 字串
+        createdAt: serverTimestamp(),
+        type: "Digital"
+      });
+      fetchCollections(user.uid);
+      alert("上傳成功！");
+    } catch (error) {
+      console.error("上傳失敗:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex h-screen bg-black text-white font-sans">
+      {/* 側邊欄 */}
+      <aside className="w-64 bg-black p-6 flex flex-col border-r border-white/5">
+        <div className="flex items-center gap-3 mb-10">
+          <div className="w-8 h-8 bg-[#1DB954] rounded-full flex items-center justify-center text-black">
+            <Music size={18} fill="black" />
+          </div>
+          <span className="font-bold text-lg tracking-tight">MelodyVault</span>
+        </div>
+
+        <nav className="flex-1 space-y-2">
+          {['控制面板', '追蹤藝人', '收藏趨勢'].map((item) => (
+            <button 
+              key={item}
+              onClick={() => setActiveMenu(item)}
+              className={`w-full flex items-center gap-4 px-4 py-2 rounded text-sm font-bold transition-colors ${activeMenu === item ? 'text-white' : 'text-[#B3B3B3] hover:text-white'}`}
+            >
+              {item === '控制面板' ? <LayoutDashboard size={20}/> : item === '追蹤藝人' ? <Users size={20}/> : <TrendingUp size={20}/>}
+              {item}
+            </button>
+          ))}
+        </nav>
+
+        {/* 登入/登出按鈕 */}
+        <div className="pt-4 border-t border-white/10">
+          {user ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <img src={user.photoURL} className="w-8 h-8 rounded-full" alt="avatar" />
+                <span className="text-xs font-bold truncate">{user.displayName}</span>
+              </div>
+              <button onClick={handleLogout} className="flex items-center gap-2 text-xs text-[#B3B3B3] hover:text-white">
+                <LogOut size={16} /> 登出系統
+              </button>
+            </div>
+          ) : (
+            <button onClick={handleLogin} className="w-full flex items-center justify-center gap-2 bg-white text-black py-2 rounded-full font-bold text-sm hover:scale-105 transition-transform">
+              <LogIn size={18} /> Google 登入
+            </button>
+          )}
+        </div>
+      </aside>
+
+      {/* 主要內容 */}
+      <main className="flex-1 bg-gradient-to-b from-[#181818] to-black overflow-y-auto p-8 pb-32">
+        <header className="flex justify-between items-center mb-8">
+          <h2 className="text-3xl font-black">{activeMenu}</h2>
+          {user && (
+            <label className="cursor-pointer bg-[#1DB954] text-black px-6 py-2 rounded-full font-bold text-sm hover:scale-105 transition-all flex items-center gap-2">
+              <Plus size={18} /> {loading ? "處理中..." : "新增收藏 (Base64)"}
+              <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} disabled={loading} />
+            </label>
+          )}
+        </header>
+
+        {/* 收藏網格 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          {myCollections.map((item) => (
+            <div key={item.id} className="bg-[#181818] p-4 rounded-lg hover:bg-[#282828] transition-all group">
+              <div className="aspect-square mb-4 rounded-md overflow-hidden bg-zinc-800 flex items-center justify-center relative">
+                {item.image ? (
+                  <img src={item.image} alt="collection" className="w-full h-full object-cover" />
+                ) : (
+                  <ImageIcon size={40} className="text-white/10" />
+                )}
+                <div className="absolute bottom-2 right-2 w-10 h-10 bg-[#1DB954] rounded-full flex items-center justify-center text-black opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
+                  <Play size={20} fill="black" />
+                </div>
+              </div>
+              <div className="font-bold text-sm truncate">{item.title}</div>
+              <div className="text-xs text-[#B3B3B3] mt-1">{item.type}</div>
+            </div>
+          ))}
+          
+          {user && myCollections.length === 0 && (
+            <div className="col-span-full py-20 text-center text-[#B3B3B3]">
+              <p>目前還沒有收藏項目，點擊右上方按鈕開始上傳！</p>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default App;
