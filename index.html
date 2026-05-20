@@ -9,7 +9,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght=400;700;900&display=swap');
     
     body {
       background-color: #000;
@@ -59,9 +59,19 @@
         <h3 class="text-lg font-black" id="error-title">系統提示</h3>
       </div>
       <p class="text-sm text-[#B3B3B3] leading-relaxed mb-6" id="error-message">錯誤訊息內容將顯示於此。</p>
-      <div class="flex justify-end">
-        <button onclick="closeErrorModal()" class="px-6 py-2 bg-white text-black font-bold rounded-full text-xs hover:scale-105 active:scale-95 transition-all">
-          我知道了
+      
+      <!-- 安全限制特屬引導按鈕 -->
+      <div id="redirect-fallback-container" class="mb-6 p-3 bg-white/5 rounded-xl border border-white/5 hidden">
+        <p class="text-xs text-[#1DB954] font-bold mb-2">💡 推薦解決方案：</p>
+        <p class="text-xs text-[#B3B3B3] mb-3">您的瀏覽器阻擋了彈出視窗通訊 (COOP 政策)。請改用安全跳轉模式登入，登入成功後會自動跳轉回來。</p>
+        <button onclick="handleLoginRedirect()" class="w-full py-2 bg-white text-black text-xs font-bold rounded-lg hover:bg-zinc-200 transition-colors">
+          使用安全跳轉模式 (Redirect) 登入
+        </button>
+      </div>
+
+      <div class="flex justify-end gap-2">
+        <button onclick="closeErrorModal()" class="px-6 py-2 bg-zinc-800 text-white font-bold rounded-full text-xs hover:bg-zinc-700 transition-all">
+          關閉
         </button>
       </div>
     </div>
@@ -178,9 +188,14 @@
       <!-- 帳戶狀態區塊 -->
       <div id="auth-container" class="pt-6 border-t border-white/10">
         <!-- 未登入狀態 -->
-        <button id="login-btn" onclick="handleLogin()" class="w-full flex items-center justify-center gap-2 bg-white text-black py-3 rounded-full font-bold text-sm hover:scale-105 transition-transform active:scale-95">
-          使用 Google 登入
-        </button>
+        <div class="space-y-2">
+          <button id="login-btn" onclick="handleLogin()" class="w-full flex items-center justify-center gap-2 bg-white text-black py-2.5 rounded-full font-bold text-xs hover:scale-105 transition-transform active:scale-95">
+            Google 彈窗登入
+          </button>
+          <button id="login-redirect-btn" onclick="handleLoginRedirect()" class="w-full flex items-center justify-center gap-2 bg-zinc-800 text-white border border-white/10 py-2.5 rounded-full font-bold text-xs hover:bg-zinc-700 transition-colors active:scale-95">
+            Google 跳轉登入 (COOP安全)
+          </button>
+        </div>
         
         <!-- 已登入狀態 -->
         <div id="user-profile" class="hidden">
@@ -274,10 +289,15 @@
         <div id="empty-state" class="flex flex-col items-center justify-center py-16 text-[#B3B3B3] text-center">
           <i data-lucide="disc" class="w-16 h-16 mb-4 opacity-20 animate-spin-slow text-spotify-green"></i>
           <p class="font-bold text-white text-lg mb-2">登入以解鎖您的專屬雲端音樂庫</p>
-          <p class="text-sm text-[#B3B3B3] max-w-xs mb-6">隨時隨地同步與管理您的實體及數位音樂珍藏。</p>
-          <button onclick="handleLogin()" class="px-8 py-3 bg-white text-black font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-xl">
-            <i data-lucide="log-in" class="w-5 h-5"></i> 使用 Google 登入
-          </button>
+          <p class="text-sm text-[#B3B3B3] max-w-sm mb-6">隨時隨地同步與管理您的實體及數位音樂珍藏。如果遇到瀏覽器彈窗安全防護，推薦使用右邊的「跳轉登入」按鈕。</p>
+          <div class="flex flex-col sm:flex-row gap-3 w-full max-w-xs justify-center">
+            <button onclick="handleLogin()" class="px-6 py-3 bg-white text-black font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl text-sm">
+              <i data-lucide="log-in" class="w-4 h-4"></i> 彈窗登入
+            </button>
+            <button onclick="handleLoginRedirect()" class="px-6 py-3 bg-zinc-800 border border-white/10 text-white font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl text-sm">
+              <i data-lucide="arrow-right-left" class="w-4 h-4 text-spotify-green"></i> 跳轉安全登入
+            </button>
+          </div>
         </div>
       </div>
 
@@ -325,7 +345,7 @@
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // --- Firebase 配置 ---
@@ -355,6 +375,18 @@
         document.getElementById('local-file-warning').classList.remove('hidden');
         lucide.createIcons();
       }
+      
+      // 處理登入跳轉結果 (Redirect Result)
+      getRedirectResult(auth)
+        .then((result) => {
+          if (result && result.user) {
+            showToast(`登入成功！歡迎回來，${result.user.displayName}`);
+          }
+        })
+        .catch((err) => {
+          console.error("Redirect login handling error: ", err);
+          showErrorModal("跳轉登入回傳失敗", `解析 Google 登入資訊時發生錯誤: ${err.message}`);
+        });
     });
 
     // 手機版側邊欄開關控制
@@ -386,10 +418,17 @@
     };
 
     // 顯示錯誤彈窗的輔助函數
-    window.showErrorModal = (title, message) => {
+    window.showErrorModal = (title, message, isCoopError = false) => {
       document.getElementById('error-title').innerText = title;
       document.getElementById('error-message').innerText = message;
       document.getElementById('error-modal').classList.remove('hidden');
+      
+      const fallbackContainer = document.getElementById('redirect-fallback-container');
+      if (isCoopError) {
+        fallbackContainer.classList.remove('hidden');
+      } else {
+        fallbackContainer.classList.add('hidden');
+      }
     };
 
     window.closeErrorModal = () => {
@@ -429,6 +468,7 @@
     onAuthStateChanged(auth, (u) => {
       user = u;
       const loginBtn = document.getElementById('login-btn');
+      const loginRedirectBtn = document.getElementById('login-redirect-btn');
       const profile = document.getElementById('user-profile');
       const uploadArea = document.getElementById('upload-control');
       const searchBox = document.getElementById('search-container');
@@ -436,7 +476,8 @@
       const viewTitle = document.getElementById('view-title');
 
       if (user) {
-        loginBtn.classList.add('hidden');
+        if(loginBtn) loginBtn.classList.add('hidden');
+        if(loginRedirectBtn) loginRedirectBtn.classList.add('hidden');
         profile.classList.remove('hidden');
         uploadArea.classList.remove('hidden');
         searchBox.classList.remove('hidden');
@@ -446,7 +487,8 @@
         viewTitle.innerText = `下午好，${user.displayName.split(' ')[0]}`;
         loadCollections();
       } else {
-        loginBtn.classList.remove('hidden');
+        if(loginBtn) loginBtn.classList.remove('hidden');
+        if(loginRedirectBtn) loginRedirectBtn.classList.remove('hidden');
         profile.classList.add('hidden');
         uploadArea.classList.add('hidden');
         searchBox.classList.add('hidden');
@@ -457,7 +499,7 @@
       }
     });
 
-    // 登入
+    // 模式一：彈窗登入 (signInWithPopup)
     window.handleLogin = async () => {
       if (window.location.protocol === 'file:') {
         showErrorModal(
@@ -471,18 +513,45 @@
         await signInWithPopup(auth, provider);
         showToast("成功登入 MelodyVault！");
       } catch (err) {
-        console.error("Login failed", err);
+        console.error("Popup Login failed", err);
         let errorHint = "登入時發生錯誤。";
+        let isCoop = false;
+        
+        // 捕獲並分析是否有 COOP / 跨域或彈出窗關閉政策限制
         if (err.code === "auth/unauthorized-domain") {
-          errorHint = "此網域（Domain）尚未在 Firebase Console 授權。請前往 Firebase 的 Authentication -> Settings -> Authorized domains 將您目前的網址網域加入白名單。";
+          errorHint = "此網域尚未在 Firebase Console 授權。請前往 Firebase 的 Authentication -> Settings -> Authorized domains 將您目前的網址網域加入白名單。";
         } else if (err.code === "auth/popup-blocked") {
-          errorHint = "瀏覽器封鎖了彈出式視窗，請允許此網頁的彈窗權限再試一次。";
+          errorHint = "瀏覽器封鎖了彈出式視窗，或遭遇了 Cross-Origin-Opener-Policy (COOP) 安全阻擋。";
+          isCoop = true;
+        } else if (err.code === "auth/popup-closed-by-user") {
+          errorHint = "您關閉了登入視窗，或者彈窗因 Cross-Origin-Opener-Policy 安全政策通訊中斷而失效。";
+          isCoop = true;
         } else if (err.code === "auth/configuration-not-found") {
           errorHint = "Firebase 設定有誤，請確認後台是否已正確啟用「Google 登入」機制。";
         } else {
           errorHint += ` (${err.message})`;
+          isCoop = true; // 預設提供跳轉安全通道
         }
-        showErrorModal("登入失敗", errorHint);
+        showErrorModal("登入遭遇安全防護限制", errorHint, isCoop);
+      }
+    };
+
+    // 模式二：跳轉登入 (signInWithRedirect) - 完美解決 COOP
+    window.handleLoginRedirect = async () => {
+      if (window.location.protocol === 'file:') {
+        showErrorModal(
+          "環境不支援", 
+          "不允許在本地檔案環境下使用 Google 登入。請透過 HTTP 伺服器開啟此網頁。"
+        );
+        return;
+      }
+      try {
+        closeErrorModal();
+        showToast("正在導向 Google 安全登入頁面...");
+        await signInWithRedirect(auth, provider);
+      } catch (err) {
+        console.error("Redirect Login failed", err);
+        showErrorModal("跳轉登入啟動失敗", `系統啟動跳轉時發生錯誤: ${err.message}`);
       }
     };
 
