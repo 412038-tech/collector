@@ -9,7 +9,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght=400;700;900&display=swap');
     
     body {
       background-color: #000;
@@ -27,7 +27,7 @@
     }
 
     .glass-nav {
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.75);
       backdrop-filter: blur(20px);
     }
 
@@ -37,6 +37,15 @@
 
     .card-shadow {
       box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    
+    /* 自訂旋轉動畫 */
+    .animate-spin-slow {
+      animation: spin 8s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -58,9 +67,20 @@
     </div>
   </div>
 
+  <!-- 手機版側邊欄遮罩 -->
+  <div id="sidebar-overlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden md:hidden"></div>
+
   <div id="app" class="flex h-screen w-full">
-    <!-- 側邊導航欄 -->
-    <aside class="w-64 bg-black flex flex-col p-6 border-r border-white/5 z-50">
+    <!-- 側邊導航欄 (具備手機收合抽屜設計) -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-black flex flex-col p-6 border-r border-white/5 z-50 transform -translate-x-full md:translate-x-0 md:relative transition-transform duration-300 shrink-0">
+      
+      <!-- 手機版關閉側邊欄按鈕 -->
+      <div class="flex justify-end md:hidden mb-4">
+        <button onclick="toggleMobileSidebar()" class="p-1 text-[#B3B3B3] hover:text-white">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
       <div class="flex items-center gap-3 mb-10 px-2 cursor-pointer">
         <div class="w-8 h-8 bg-spotify-green rounded-full flex items-center justify-center text-black">
           <i data-lucide="music" class="w-5 h-5 fill-current"></i>
@@ -106,13 +126,17 @@
       <div id="header-bg" class="absolute top-0 inset-x-0 h-80 bg-gradient-to-b from-[#222222] to-transparent pointer-events-none transition-colors duration-1000"></div>
 
       <!-- 頂部列 -->
-      <header class="h-16 flex items-center justify-between px-8 z-40 glass-nav sticky top-0">
+      <header class="h-16 flex items-center justify-between px-6 md:px-8 z-40 glass-nav sticky top-0 border-b border-white/5">
         <div class="flex items-center gap-4">
-          <h2 id="view-title" class="text-2xl font-black tracking-tight">下午好</h2>
+          <!-- 手機版漢堡選單按鈕 -->
+          <button onclick="toggleMobileSidebar()" class="md:hidden p-2 text-[#B3B3B3] hover:text-white">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+          <h2 id="view-title" class="text-xl md:text-2xl font-black tracking-tight">下午好</h2>
         </div>
         
         <div id="upload-control" class="hidden">
-          <label class="bg-spotify-green text-black px-6 py-2 rounded-full font-bold text-sm hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer card-shadow">
+          <label class="bg-spotify-green text-black px-4 md:px-6 py-2 rounded-full font-bold text-xs md:text-sm hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer card-shadow">
             <i data-lucide="plus" class="w-4 h-4"></i> 新增珍藏
             <input type="file" id="image-upload" class="hidden" accept="image/*">
           </label>
@@ -120,7 +144,7 @@
       </header>
 
       <!-- 內容滾動區 -->
-      <div id="main-content" class="flex-1 overflow-y-auto p-8 z-10 no-scrollbar pb-32">
+      <div id="main-content" class="flex-1 overflow-y-auto p-6 md:p-8 z-10 no-scrollbar pb-36">
         <!-- 開發環境警告橫幅 -->
         <div id="local-file-warning" class="hidden mb-6 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
           <i data-lucide="alert-circle" class="text-amber-500 shrink-0 mt-0.5"></i>
@@ -147,24 +171,28 @@
         </div>
 
         <h4 class="text-lg font-black mb-4">您的珍藏庫</h4>
-        <div id="collection-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+        <div id="collection-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
           <!-- 動態載入的卡片 -->
         </div>
 
-        <div id="empty-state" class="flex flex-col items-center justify-center py-20 text-[#B3B3B3]">
-          <i data-lucide="disc" class="w-16 h-16 mb-4 opacity-20 animate-spin-slow"></i>
-          <p class="font-bold">尚未登入或目前無收藏</p>
-          <p class="text-sm">請登入帳戶以同步您的雲端珍藏。</p>
+        <!-- 空白/未登入狀態區 (大幅加強引導與登入功能) -->
+        <div id="empty-state" class="flex flex-col items-center justify-center py-16 text-[#B3B3B3] text-center">
+          <i data-lucide="disc" class="w-16 h-16 mb-4 opacity-20 animate-spin-slow text-spotify-green"></i>
+          <p class="font-bold text-white text-lg mb-2">登入以解鎖您的專屬雲端音樂庫</p>
+          <p class="text-sm text-[#B3B3B3] max-w-xs mb-6">隨時隨地同步與管理您的實體及數位音樂珍藏。</p>
+          <button onclick="handleLogin()" class="px-8 py-3 bg-white text-black font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-xl">
+            <i data-lucide="log-in" class="w-5 h-5"></i> 使用 Google 登入
+          </button>
         </div>
       </div>
 
       <!-- 底部播放列模擬 -->
       <footer class="fixed bottom-0 inset-x-0 h-24 bg-black border-t border-white/5 px-6 flex items-center justify-between z-50">
         <div class="flex items-center gap-4 w-1/3">
-          <div id="current-img" class="w-14 h-14 bg-zinc-800 rounded shadow-lg flex items-center justify-center">
+          <div id="current-img" class="w-14 h-14 bg-zinc-800 rounded shadow-lg flex items-center justify-center shrink-0">
             <i data-lucide="music" class="text-white/20"></i>
           </div>
-          <div class="hidden sm:block">
+          <div class="hidden sm:block truncate">
             <p id="current-title" class="text-sm font-bold truncate">未在播放</p>
             <p class="text-[10px] text-[#B3B3B3] hover:underline cursor-pointer">MelodyVault Player</p>
           </div>
@@ -191,7 +219,7 @@
 
         <div class="flex items-center justify-end gap-4 w-1/3 text-[#B3B3B3]">
           <i data-lucide="volume-2" class="w-5 h-5 hover:text-white cursor-pointer"></i>
-          <div class="w-24 h-1 bg-[#4d4d4d] rounded-full overflow-hidden">
+          <div class="w-24 h-1 bg-[#4d4d4d] rounded-full overflow-hidden hidden md:block">
             <div class="h-full bg-white w-2/3"></div>
           </div>
         </div>
@@ -232,6 +260,21 @@
         lucide.createIcons();
       }
     });
+
+    // 手機版側邊欄開關控制
+    window.toggleMobileSidebar = () => {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      const isHidden = sidebar.classList.contains('-translate-x-full');
+      
+      if (isHidden) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      }
+    };
 
     // 顯示錯誤彈窗的輔助函數
     window.showErrorModal = (title, message) => {
@@ -392,6 +435,14 @@
         libraryBtn.classList.add('active');
         title.innerText = "您的音樂庫";
         stats.classList.add('hidden');
+      }
+      
+      // 切換後自動收合手機版側邊欄
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      if (!sidebar.classList.contains('-translate-x-full')) {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
       }
     }
   </script>
