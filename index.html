@@ -9,10 +9,10 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght=400;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
     
     body {
-      background-color: #000;
+      background-color: #050507;
       color: #fff;
       font-family: 'Noto Sans TC', sans-serif;
     }
@@ -27,7 +27,7 @@
     }
 
     .glass-nav {
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(5, 5, 7, 0.75);
       backdrop-filter: blur(20px);
     }
 
@@ -36,24 +36,40 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
     .card-shadow {
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
     }
     
     /* 自訂旋轉動畫 */
     .animate-spin-slow {
-      animation: spin 8s linear infinite;
+      animation: spin 10s linear infinite;
     }
     @keyframes spin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
+    }
+
+    /* 檢視模式按鈕點亮 */
+    .view-mode-btn.active {
+      background-color: #1DB954;
+      color: #000;
+      box-shadow: 0 0 15px rgba(29, 185, 84, 0.4);
+    }
+
+    /* 極光動態微光背景 */
+    .aurora-bg {
+      background: radial-gradient(circle at 10% 15%, rgba(29, 185, 84, 0.12) 0%, transparent 35%),
+                  radial-gradient(circle at 90% 10%, rgba(147, 51, 234, 0.15) 0%, transparent 40%),
+                  radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.12) 0%, transparent 45%),
+                  radial-gradient(circle at 80% 90%, rgba(236, 72, 153, 0.08) 0%, transparent 30%),
+                  linear-gradient(to bottom, #111115, #050507);
     }
   </style>
 </head>
 <body class="overflow-hidden">
 
   <!-- 提示與錯誤訊息彈窗 (客製化 Modal) -->
-  <div id="error-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[999] hidden p-4">
-    <div class="bg-[#181818] border border-red-500/30 rounded-2xl max-w-md w-full p-6 card-shadow">
+  <div id="error-modal" class="fixed inset-0 bg-black/85 flex items-center justify-center z-[999] hidden p-4 backdrop-blur-sm">
+    <div class="bg-[#121215] border border-red-500/40 rounded-3xl max-w-md w-full p-6 card-shadow">
       <div class="flex items-center gap-3 text-red-500 mb-4">
         <i data-lucide="alert-triangle" class="w-8 h-8"></i>
         <h3 class="text-lg font-black" id="error-title">系統提示</h3>
@@ -61,10 +77,10 @@
       <p class="text-sm text-[#B3B3B3] leading-relaxed mb-6" id="error-message">錯誤訊息內容將顯示於此。</p>
       
       <!-- 安全限制特屬引導按鈕 -->
-      <div id="redirect-fallback-container" class="mb-6 p-3 bg-white/5 rounded-xl border border-white/5 hidden">
+      <div id="redirect-fallback-container" class="mb-6 p-4 bg-white/5 rounded-2xl border border-white/5 hidden">
         <p class="text-xs text-[#1DB954] font-bold mb-2">💡 推薦解決方案：</p>
         <p class="text-xs text-[#B3B3B3] mb-3">您的瀏覽器阻擋了彈出視窗通訊 (COOP 政策)。請改用安全跳轉模式登入，登入成功後會自動跳轉回來。</p>
-        <button onclick="handleLoginRedirect()" class="w-full py-2 bg-white text-black text-xs font-bold rounded-lg hover:bg-zinc-200 transition-colors">
+        <button onclick="handleLoginRedirect()" class="w-full py-2.5 bg-white text-black text-xs font-bold rounded-xl hover:bg-zinc-200 transition-colors">
           使用安全跳轉模式 (Redirect) 登入
         </button>
       </div>
@@ -78,14 +94,14 @@
   </div>
 
   <!-- 成功/通知氣泡 (Toast) -->
-  <div id="toast-notification" class="fixed bottom-28 right-6 bg-[#1DB954] text-black px-6 py-4 rounded-xl font-bold text-sm shadow-2xl flex items-center gap-3 z-[999] transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+  <div id="toast-notification" class="fixed bottom-28 right-6 bg-gradient-to-r from-[#1DB954] to-emerald-400 text-black px-6 py-4 rounded-xl font-bold text-sm shadow-2xl flex items-center gap-3 z-[999] transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
     <i data-lucide="check-circle" class="w-5 h-5"></i>
     <span id="toast-text">操作成功！</span>
   </div>
 
   <!-- 新增珍藏詳細彈窗 (Add Item Modal) -->
-  <div id="add-modal" class="fixed inset-0 bg-black/85 flex items-center justify-center z-[500] hidden p-4 backdrop-blur-sm">
-    <div class="bg-[#181818] border border-white/10 rounded-3xl max-w-lg w-full p-6 md:p-8 card-shadow">
+  <div id="add-modal" class="fixed inset-0 bg-black/85 flex items-center justify-center z-[500] hidden p-4 backdrop-blur-md">
+    <div class="bg-[#121215] border border-white/10 rounded-3xl max-w-lg w-full p-6 md:p-8 card-shadow">
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3 text-spotify-green">
           <i data-lucide="plus-circle" class="w-6 h-6"></i>
@@ -101,12 +117,12 @@
           <!-- 標題 -->
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-bold text-[#B3B3B3] uppercase tracking-wider">專輯/單曲名稱 *</label>
-            <input type="text" id="form-title" required placeholder="例如: HIT ME HARD AND SOFT" class="bg-[#282828] border border-white/5 focus:border-spotify-green outline-none rounded-xl px-4 py-3 text-sm text-white transition-all">
+            <input type="text" id="form-title" required placeholder="例如: HIT ME HARD AND SOFT" class="bg-[#1d1d24] border border-white/5 focus:border-spotify-green outline-none rounded-xl px-4 py-3 text-sm text-white transition-all">
           </div>
           <!-- 歌手 -->
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-bold text-[#B3B3B3] uppercase tracking-wider">歌手/藝人 *</label>
-            <input type="text" id="form-artist" required placeholder="例如: Billie Eilish" class="bg-[#282828] border border-white/5 focus:border-spotify-green outline-none rounded-xl px-4 py-3 text-sm text-white transition-all">
+            <input type="text" id="form-artist" required placeholder="例如: Billie Eilish" class="bg-[#1d1d24] border border-white/5 focus:border-spotify-green outline-none rounded-xl px-4 py-3 text-sm text-white transition-all">
           </div>
         </div>
 
@@ -114,7 +130,7 @@
           <!-- 類型 -->
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-bold text-[#B3B3B3] uppercase tracking-wider">媒介類型</label>
-            <select id="form-type" class="bg-[#282828] border border-white/5 focus:border-spotify-green outline-none rounded-xl px-4 py-3 text-sm text-white transition-all">
+            <select id="form-type" class="bg-[#1d1d24] border border-white/5 focus:border-spotify-green outline-none rounded-xl px-4 py-3 text-sm text-white transition-all">
               <option value="黑膠唱片">Vinyl 黑膠唱片</option>
               <option value="CD 專輯">CD 光碟專輯</option>
               <option value="復古磁帶">Cassette 復古磁帶</option>
@@ -124,7 +140,7 @@
           <!-- 估值 -->
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-bold text-[#B3B3B3] uppercase tracking-wider">估算價值 (NT$) *</label>
-            <input type="number" id="form-value" required min="0" placeholder="例如: 1200" class="bg-[#282828] border border-white/5 focus:border-spotify-green outline-none rounded-xl px-4 py-3 text-sm text-white transition-all">
+            <input type="number" id="form-value" required min="0" placeholder="例如: 1200" class="bg-[#1d1d24] border border-white/5 focus:border-spotify-green outline-none rounded-xl px-4 py-3 text-sm text-white transition-all">
           </div>
         </div>
 
@@ -170,10 +186,10 @@
       </div>
 
       <div class="flex items-center gap-3 mb-10 px-2 cursor-pointer">
-        <div class="w-8 h-8 bg-spotify-green rounded-full flex items-center justify-center text-black">
+        <div class="w-8 h-8 bg-spotify-green rounded-full flex items-center justify-center text-black shadow-[0_0_15px_rgba(29,185,84,0.4)] animate-pulse">
           <i data-lucide="music" class="w-5 h-5 fill-current"></i>
         </div>
-        <span class="font-black text-xl tracking-tighter">MelodyVault</span>
+        <span class="font-black text-xl tracking-tighter bg-gradient-to-r from-white via-slate-200 to-[#1DB954] bg-clip-text text-transparent">MelodyVault</span>
       </div>
 
       <nav class="flex-1 space-y-1">
@@ -200,10 +216,10 @@
         <!-- 已登入狀態 -->
         <div id="user-profile" class="hidden">
           <div class="flex items-center gap-3 mb-4 p-2">
-            <img id="user-avatar" src="" class="w-8 h-8 rounded-full border border-white/10">
+            <img id="user-avatar" src="" class="w-8 h-8 rounded-full border border-white/10 shadow-[0_0_10px_rgba(255,255,255,0.1)]">
             <div class="overflow-hidden">
               <p id="user-display-name" class="text-xs font-bold truncate">使用者名稱</p>
-              <p class="text-[10px] text-[#B3B3B3]">Premium 會員</p>
+              <p class="text-[10px] text-spotify-green font-bold">Premium 會員</p>
             </div>
           </div>
           <button onclick="handleLogout()" class="w-full flex items-center gap-2 px-2 text-xs font-bold text-[#B3B3B3] hover:text-white transition-colors">
@@ -214,10 +230,7 @@
     </aside>
 
     <!-- 主要顯示區域 -->
-    <main class="flex-1 flex flex-col bg-[#121212] overflow-hidden relative">
-      <!-- 頂部漸層裝飾 -->
-      <div id="header-bg" class="absolute top-0 inset-x-0 h-80 bg-gradient-to-b from-[#222222] to-transparent pointer-events-none transition-colors duration-1000"></div>
-
+    <main class="flex-1 flex flex-col overflow-hidden relative aurora-bg">
       <!-- 頂部列 -->
       <header class="h-16 flex items-center justify-between px-6 md:px-8 z-40 glass-nav sticky top-0 border-b border-white/5">
         <div class="flex items-center gap-4 flex-1">
@@ -225,12 +238,12 @@
           <button onclick="toggleMobileSidebar()" class="md:hidden p-2 text-[#B3B3B3] hover:text-white">
             <i data-lucide="menu" class="w-6 h-6"></i>
           </button>
-          <h2 id="view-title" class="text-lg md:text-2xl font-black tracking-tight whitespace-nowrap">下午好</h2>
+          <h2 id="view-title" class="text-lg md:text-2xl font-black tracking-tight whitespace-nowrap text-white">下午好</h2>
           
           <!-- 音樂搜尋過濾欄 (僅登入後可見) -->
           <div id="search-container" class="relative max-w-xs w-full ml-4 hidden">
             <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-[#B3B3B3] w-4 h-4"></i>
-            <input type="text" id="search-input" oninput="handleSearchFilter()" placeholder="搜尋專輯或歌手..." class="w-full pl-9 pr-4 py-2 bg-white/10 focus:bg-white/15 outline-none rounded-full text-xs text-white placeholder-[#888] border border-transparent focus:border-white/10 transition-all">
+            <input type="text" id="search-input" oninput="handleSearchFilter()" placeholder="搜尋專輯或歌手..." class="w-full pl-9 pr-4 py-2 bg-white/10 focus:bg-white/15 outline-none rounded-full text-xs text-white placeholder-[#888] border border-transparent focus:border-[#1DB954]/30 transition-all">
           </div>
         </div>
         
@@ -252,42 +265,66 @@
           </div>
         </div>
 
+        <!-- 數據統計區塊 (幻彩漸變升級) -->
         <div id="stats-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-           <!-- 數據卡片 -->
-           <div class="bg-[#181818] border border-white/5 p-5 rounded-xl hover:bg-white/[0.04] transition-colors relative overflow-hidden group">
-             <div class="absolute right-4 top-4 bg-spotify-green/10 text-spotify-green p-2 rounded-lg">
+           <!-- 總珍藏估值 (翡翠綠漸層) -->
+           <div class="bg-gradient-to-br from-emerald-600/15 via-zinc-900/40 to-zinc-950/80 border border-emerald-500/20 p-5 rounded-2xl hover:border-emerald-500/40 transition-all relative overflow-hidden group shadow-lg">
+             <div class="absolute right-4 top-4 bg-emerald-500/20 text-emerald-400 p-2.5 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.2)]">
                <i data-lucide="dollar-sign" class="w-5 h-5"></i>
              </div>
-             <p class="text-[10px] font-bold text-[#B3B3B3] uppercase tracking-wider mb-1">總珍藏估值</p>
-             <h3 id="stat-total-value" class="text-2xl font-black">NT$ 0</h3>
-             <p class="text-[10px] text-spotify-green mt-1 font-bold">即時雲端統計中</p>
+             <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1">總珍藏估值</p>
+             <h3 id="stat-total-value" class="text-2xl font-black text-white">NT$ 0</h3>
+             <p class="text-[10px] text-emerald-400/80 mt-1.5 font-bold flex items-center gap-1">
+               <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+               即時雲端統計中
+             </p>
            </div>
-           <div class="bg-[#181818] border border-white/5 p-5 rounded-xl hover:bg-white/[0.04] transition-colors relative overflow-hidden group">
-             <div class="absolute right-4 top-4 bg-blue-500/10 text-blue-400 p-2 rounded-lg">
+           
+           <!-- 本月新增珍藏 (星空藍漸層) -->
+           <div class="bg-gradient-to-br from-blue-600/15 via-zinc-900/40 to-zinc-950/80 border border-blue-500/20 p-5 rounded-2xl hover:border-blue-500/40 transition-all relative overflow-hidden group shadow-lg">
+             <div class="absolute right-4 top-4 bg-blue-500/20 text-blue-400 p-2.5 rounded-xl shadow-[0_0_15px_rgba(59,130,246,0.2)]">
                <i data-lucide="library" class="w-5 h-5"></i>
              </div>
-             <p class="text-[10px] font-bold text-[#B3B3B3] uppercase tracking-wider mb-1">本月新增珍藏</p>
-             <h3 id="stat-total-count" class="text-2xl font-black">0 件</h3>
-             <p class="text-[10px] text-blue-400 mt-1 font-bold">累計收藏庫容量</p>
+             <p class="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1">本月新增珍藏</p>
+             <h3 id="stat-total-count" class="text-2xl font-black text-white">0 件</h3>
+             <p class="text-[10px] text-blue-400/80 mt-1.5 font-bold">累計收藏庫容量</p>
            </div>
-           <div class="bg-[#181818] border border-white/5 p-5 rounded-xl hover:bg-white/[0.04] transition-colors relative overflow-hidden group">
-             <div class="absolute right-4 top-4 bg-purple-500/10 text-purple-400 p-2 rounded-lg">
+           
+           <!-- 平均收藏價值 (幻彩紫漸層) -->
+           <div class="bg-gradient-to-br from-purple-600/15 via-zinc-900/40 to-zinc-950/80 border border-purple-500/20 p-5 rounded-2xl hover:border-purple-500/40 transition-all relative overflow-hidden group shadow-lg">
+             <div class="absolute right-4 top-4 bg-purple-500/20 text-purple-400 p-2.5 rounded-xl shadow-[0_0_15px_rgba(168,85,247,0.2)]">
                <i data-lucide="award" class="w-5 h-5"></i>
              </div>
-             <p class="text-[10px] font-bold text-[#B3B3B3] uppercase tracking-wider mb-1">平均收藏價值</p>
-             <h3 id="stat-average-value" class="text-2xl font-black">NT$ 0</h3>
-             <p class="text-[10px] text-purple-400 mt-1 font-bold">每件資產平均市場估計</p>
+             <p class="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-1">平均收藏價值</p>
+             <h3 id="stat-average-value" class="text-2xl font-black text-white">NT$ 0</h3>
+             <p class="text-[10px] text-purple-400/80 mt-1.5 font-bold">每件資產平均市場估算</p>
            </div>
         </div>
 
-        <h4 id="vault-title-text" class="text-lg font-black mb-4">您的珍藏庫</h4>
+        <!-- 檢視層級切換選單 (View Hierarchy Toggle) -->
+        <div id="view-mode-bar" class="hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-white/5">
+          <h4 id="vault-title-text" class="text-lg font-black text-white">您的珍藏庫</h4>
+          
+          <div class="flex items-center bg-zinc-900/60 p-1 rounded-full border border-white/5 w-fit shadow-inner">
+            <button onclick="changeViewMode('grid')" id="view-mode-grid" class="view-mode-btn active flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all text-[#B3B3B3] hover:text-white">
+              <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i> 平鋪網格
+            </button>
+            <button onclick="changeViewMode('medium')" id="view-mode-medium" class="view-mode-btn flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all text-[#B3B3B3] hover:text-white">
+              <i data-lucide="layers" class="w-3.5 h-3.5"></i> 依媒介分層
+            </button>
+            <button onclick="changeViewMode('artist')" id="view-mode-artist" class="view-mode-btn flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all text-[#B3B3B3] hover:text-white">
+              <i data-lucide="folder" class="w-3.5 h-3.5"></i> 依歌手分群
+            </button>
+          </div>
+        </div>
+
         <div id="collection-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-          <!-- 動態載入的卡片 -->
+          <!-- 動態載入的卡片（或分層貨架） -->
         </div>
 
         <!-- 空白/未登入狀態區 -->
         <div id="empty-state" class="flex flex-col items-center justify-center py-16 text-[#B3B3B3] text-center">
-          <i data-lucide="disc" class="w-16 h-16 mb-4 opacity-20 animate-spin-slow text-spotify-green"></i>
+          <i data-lucide="disc" class="w-16 h-16 mb-4 opacity-20 animate-spin-slow text-spotify-green shadow-[0_0_30px_rgba(29,185,84,0.15)]"></i>
           <p class="font-bold text-white text-lg mb-2">登入以解鎖您的專屬雲端音樂庫</p>
           <p class="text-sm text-[#B3B3B3] max-w-sm mb-6">隨時隨地同步與管理您的實體及數位音樂珍藏。如果遇到瀏覽器彈窗安全防護，推薦使用右邊的「跳轉登入」按鈕。</p>
           <div class="flex flex-col sm:flex-row gap-3 w-full max-w-xs justify-center">
@@ -301,14 +338,14 @@
         </div>
       </div>
 
-      <!-- 底部播放列模擬 -->
-      <footer class="fixed bottom-0 inset-x-0 h-24 bg-black border-t border-white/5 px-6 flex items-center justify-between z-50">
+      <!-- 底部播放列模擬 (幻彩漸變進度條) -->
+      <footer class="fixed bottom-0 inset-x-0 h-24 bg-black/90 border-t border-white/5 px-6 flex items-center justify-between z-50 backdrop-blur-xl">
         <div class="flex items-center gap-4 w-1/3">
-          <div id="current-img" class="w-14 h-14 bg-zinc-800 rounded shadow-lg flex items-center justify-center shrink-0 overflow-hidden">
+          <div id="current-img" class="w-14 h-14 bg-zinc-800 rounded shadow-lg flex items-center justify-center shrink-0 overflow-hidden border border-white/5">
             <i data-lucide="music" class="text-white/20"></i>
           </div>
           <div class="hidden sm:block truncate">
-            <p id="current-title" class="text-sm font-bold truncate">未在播放</p>
+            <p id="current-title" class="text-sm font-bold truncate text-white">未在播放</p>
             <p id="current-artist" class="text-[10px] text-[#B3B3B3] hover:underline cursor-pointer">MelodyVault Player</p>
           </div>
         </div>
@@ -317,7 +354,7 @@
            <div class="flex items-center gap-6">
              <i data-lucide="shuffle" class="w-4 h-4 text-[#B3B3B3] hover:text-white cursor-pointer"></i>
              <i data-lucide="skip-back" class="w-5 h-5 fill-current cursor-pointer"></i>
-             <div id="global-play-btn" class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-black hover:scale-105 transition-transform cursor-pointer">
+             <div id="global-play-btn" class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-black hover:scale-105 transition-transform cursor-pointer shadow-lg">
                <i data-lucide="play" class="w-5 h-5 fill-current ml-0.5"></i>
              </div>
              <i data-lucide="skip-forward" class="w-5 h-5 fill-current cursor-pointer"></i>
@@ -325,8 +362,8 @@
            </div>
            <div class="w-full flex items-center gap-2">
              <span class="text-[10px] text-[#B3B3B3]">0:00</span>
-             <div class="flex-1 h-1 bg-[#4d4d4d] rounded-full overflow-hidden">
-               <div class="h-full bg-white w-0 hover:bg-spotify-green"></div>
+             <div class="flex-1 h-1 bg-[#222] rounded-full overflow-hidden group cursor-pointer relative">
+               <div class="h-full bg-gradient-to-r from-[#1DB954] to-cyan-400 w-1/4 rounded-full relative shadow-[0_0_10px_rgba(29,185,84,0.5)]"></div>
              </div>
              <span class="text-[10px] text-[#B3B3B3]">0:00</span>
            </div>
@@ -334,8 +371,8 @@
 
         <div class="flex items-center justify-end gap-4 w-1/3 text-[#B3B3B3]">
           <i data-lucide="volume-2" class="w-5 h-5 hover:text-white cursor-pointer"></i>
-          <div class="w-24 h-1 bg-[#4d4d4d] rounded-full overflow-hidden hidden md:block">
-            <div class="h-full bg-white w-2/3"></div>
+          <div class="w-24 h-1 bg-[#222] rounded-full overflow-hidden hidden md:block">
+            <div class="h-full bg-white/80 w-2/3"></div>
           </div>
         </div>
       </footer>
@@ -364,7 +401,52 @@
     const provider = new GoogleAuthProvider();
 
     let user = null;
-    let localCollectionsData = []; // 用於本地前端快速搜尋過濾
+    let localCollectionsData = []; // 用於本地前端快速搜尋與分層處理
+    let currentViewMode = 'grid'; // 'grid' | 'medium' | 'artist'
+
+    // 媒介與歌手區塊繽紛配色對照表
+    const mediumStyles = {
+      '黑膠唱片': {
+        badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.1)]',
+        border: 'hover:border-purple-500/40 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]',
+        text: 'text-purple-400',
+        icon: 'disc'
+      },
+      'CD 專輯': {
+        badge: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]',
+        border: 'hover:border-cyan-500/40 hover:shadow-[0_0_20px_rgba(6,182,212,0.15)]',
+        text: 'text-cyan-400',
+        icon: 'circle-dot'
+      },
+      '復古磁帶': {
+        badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]',
+        border: 'hover:border-amber-500/40 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]',
+        text: 'text-amber-400',
+        icon: 'cassette-tape'
+      },
+      '數位音樂': {
+        badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]',
+        border: 'hover:border-emerald-500/40 hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]',
+        text: 'text-emerald-400',
+        icon: 'globe'
+      },
+      '其他': {
+        badge: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+        border: 'hover:border-slate-500/40',
+        text: 'text-slate-400',
+        icon: 'music'
+      }
+    };
+
+    // 隨機歌手頭像配色梯度
+    const artistGradientClasses = [
+      'from-purple-500 to-pink-500 text-white',
+      'from-blue-500 to-cyan-500 text-white',
+      'from-emerald-500 to-teal-500 text-white',
+      'from-amber-500 to-orange-500 text-white',
+      'from-fuchsia-500 to-rose-500 text-white',
+      'from-indigo-500 to-purple-500 text-white'
+    ];
 
     // 初始化圖示
     lucide.createIcons();
@@ -472,6 +554,7 @@
       const profile = document.getElementById('user-profile');
       const uploadArea = document.getElementById('upload-control');
       const searchBox = document.getElementById('search-container');
+      const viewModeBar = document.getElementById('view-mode-bar');
       const emptyState = document.getElementById('empty-state');
       const viewTitle = document.getElementById('view-title');
 
@@ -481,6 +564,7 @@
         profile.classList.remove('hidden');
         uploadArea.classList.remove('hidden');
         searchBox.classList.remove('hidden');
+        viewModeBar.classList.remove('hidden');
         emptyState.classList.add('hidden');
         document.getElementById('user-avatar').src = user.photoURL;
         document.getElementById('user-display-name').innerText = user.displayName;
@@ -492,6 +576,7 @@
         profile.classList.add('hidden');
         uploadArea.classList.add('hidden');
         searchBox.classList.add('hidden');
+        viewModeBar.classList.add('hidden');
         emptyState.classList.remove('hidden');
         viewTitle.innerText = "下午好";
         document.getElementById('collection-grid').innerHTML = '';
@@ -600,8 +685,8 @@
           });
         });
 
-        // 重新繪製網格
-        renderCollectionGrid(localCollectionsData);
+        // 依據目前選擇的 View Mode 繪製畫面
+        renderMasterView(localCollectionsData);
         // 更新數據卡片
         updateStats(tempTotalValue, localCollectionsData.length);
 
@@ -611,52 +696,225 @@
       }
     }
 
-    // 將資料繪製到畫面網格上
-    function renderCollectionGrid(items) {
-      const grid = document.getElementById('collection-grid');
+    // 切換層級檢視模式
+    window.changeViewMode = (mode) => {
+      currentViewMode = mode;
+      
+      // 更新按鈕樣式
+      document.querySelectorAll('.view-mode-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`view-mode-${mode}`).classList.add('active');
+      
+      // 重新繪製內容
+      renderMasterView(localCollectionsData);
+    };
+
+    // 整合調度分層渲染的核心主函數
+    function renderMasterView(items) {
+      const gridContainer = document.getElementById('collection-grid');
       const emptyState = document.getElementById('empty-state');
-      grid.innerHTML = '';
+      
+      gridContainer.innerHTML = '';
 
       if (items.length === 0) {
         emptyState.classList.remove('hidden');
+        return;
       } else {
         emptyState.classList.add('hidden');
       }
 
+      // 依檢視模式分配不同的排版結構
+      if (currentViewMode === 'grid') {
+        // --- 1. 經典平鋪網格 ---
+        gridContainer.className = "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6";
+        renderFlatGrid(items, gridContainer);
+      } else if (currentViewMode === 'medium') {
+        // --- 2. 依媒介分層貨架 ---
+        gridContainer.className = "space-y-10 w-full col-span-full";
+        renderMediumShelves(items, gridContainer);
+      } else if (currentViewMode === 'artist') {
+        // --- 3. 依歌手分群資料夾 ---
+        gridContainer.className = "space-y-6 w-full col-span-full";
+        renderArtistGroups(items, gridContainer);
+      }
+      
+      lucide.createIcons();
+    }
+
+    // A. 經典網格渲染法
+    function renderFlatGrid(items, targetContainer) {
       items.forEach(data => {
-        const card = document.createElement('div');
-        card.className = "bg-[#181818] p-4 rounded-xl hover:bg-[#282828] transition-all group card-shadow cursor-pointer relative";
+        const card = createCollectionCard(data);
+        targetContainer.appendChild(card);
+      });
+    }
+
+    // B. 依媒介分層渲染 (Vinyl, CD, Tape, Digital Shelves)
+    function renderMediumShelves(items, targetContainer) {
+      // 分組
+      const groups = {
+        '黑膠唱片': [],
+        'CD 專輯': [],
+        '復古磁帶': [],
+        '數位音樂': []
+      };
+      
+      items.forEach(item => {
+        if (groups[item.type]) {
+          groups[item.type].push(item);
+        } else {
+          // 未分類安全網
+          if (!groups['其他']) groups['其他'] = [];
+          groups['其他'].push(item);
+        }
+      });
+
+      Object.keys(groups).forEach(key => {
+        const list = groups[key];
+        if (list.length === 0) return; // 空的貨架就不顯示
+
+        const shelfTotalVal = list.reduce((sum, item) => sum + item.value, 0);
+        const style = mediumStyles[key] || mediumStyles['其他'];
         
-        // 點擊卡片除點擊刪除按鈕外，均會觸發播放
-        card.onclick = (e) => {
-          if (e.target.closest('.delete-btn')) return;
-          playPreview(data.title, data.artist, data.image);
-        };
-
-        card.innerHTML = `
-          <div class="aspect-square bg-zinc-800 rounded-md mb-4 overflow-hidden relative shadow-lg">
-            ${data.image ? `<img src="${data.image}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center"><i data-lucide="music" class="text-white/10 w-12 h-12"></i></div>`}
-            
-            <!-- 刪除按鈕 (Hover 顯現) -->
-            <button class="delete-btn absolute top-2 right-2 p-2 bg-black/70 hover:bg-red-600 rounded-full text-white/80 hover:text-white transition-all opacity-0 group-hover:opacity-100 z-20" onclick="handleDeleteItem('${data.id}')">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
-
-            <!-- 綠色播放按鈕 -->
-            <div class="absolute bottom-2 right-2 w-10 h-10 bg-spotify-green rounded-full flex items-center justify-center text-black opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all shadow-2xl z-10">
-               <i data-lucide="play" class="fill-current w-5 h-5 ml-0.5"></i>
+        const shelfDiv = document.createElement('div');
+        shelfDiv.className = "bg-[#101014] border border-white/5 p-6 rounded-3xl shadow-2xl relative overflow-hidden";
+        
+        shelfDiv.innerHTML = `
+          <!-- 貨架微型極光霓虹裝飾 -->
+          <div class="absolute top-0 left-0 w-24 h-[2px] bg-gradient-to-r from-transparent via-${style.text.replace('text-', '')} to-transparent"></div>
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-3 border-b border-white/5">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-white/5 ${style.text} rounded-xl shadow-inner">
+                <i data-lucide="${style.icon}" class="w-5 h-5"></i>
+              </div>
+              <h5 class="text-base font-black text-white">${key} <span class="text-xs text-[#B3B3B3] font-normal ml-1">(${list.length} 件珍藏)</span></h5>
+            </div>
+            <div class="text-xs font-bold text-[#B3B3B3]">
+              貨架估值: <span class="${style.text} font-black text-sm">NT$ ${shelfTotalVal.toLocaleString()}</span>
             </div>
           </div>
-          <h5 class="text-sm font-bold truncate text-white mb-0.5" title="${data.title}">${data.title}</h5>
-          <p class="text-xs text-[#B3B3B3] truncate mb-2">${data.artist}</p>
-          <div class="flex items-center justify-between mt-auto">
-            <span class="text-[9px] bg-white/10 text-white/80 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">${data.type}</span>
-            <span class="text-xs font-bold text-spotify-green">NT$ ${data.value.toLocaleString()}</span>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6" id="shelf-row-${key}">
           </div>
         `;
-        grid.appendChild(card);
+        
+        targetContainer.appendChild(shelfDiv);
+        
+        // 渲染該貨架底下的卡片
+        const shelfRow = document.getElementById(`shelf-row-${key}`);
+        list.forEach(data => {
+          shelfRow.appendChild(createCollectionCard(data));
+        });
       });
-      lucide.createIcons();
+    }
+
+    // C. 依歌手分群資料夾渲染 (幻彩橫幅)
+    function renderArtistGroups(items, targetContainer) {
+      // 依歌手建立物件分組
+      const artistMap = {};
+      items.forEach(item => {
+        if (!artistMap[item.artist]) {
+          artistMap[item.artist] = [];
+        }
+        artistMap[item.artist].push(item);
+      });
+
+      Object.keys(artistMap).forEach((artistName, index) => {
+        const list = artistMap[artistName];
+        const artistTotalVal = list.reduce((sum, item) => sum + item.value, 0);
+        const folderId = `artist-folder-${index}`;
+        
+        // 自訂隨機極光色階
+        const gradientClass = artistGradientClasses[index % artistGradientClasses.length];
+
+        const artistGroupDiv = document.createElement('div');
+        artistGroupDiv.className = "bg-[#101014] border border-white/5 rounded-2xl overflow-hidden shadow-lg hover:border-white/10 transition-all";
+        
+        artistGroupDiv.innerHTML = `
+          <!-- 可點擊收合之歌手頂部標頭 -->
+          <div onclick="toggleArtistFolder('${folderId}')" class="flex items-center justify-between p-4 md:p-5 bg-zinc-950/40 hover:bg-white/[0.04] transition-colors cursor-pointer select-none">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 bg-gradient-to-tr ${gradientClass} rounded-full flex items-center justify-center font-black shadow-md">
+                ${artistName.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h5 class="text-sm md:text-base font-black text-white">${artistName}</h5>
+                <p class="text-[11px] text-[#B3B3B3] font-bold mt-0.5">${list.length} 首珍藏作品</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="text-xs font-bold text-[#B3B3B3] text-right">
+                <span class="block text-[10px] text-[#888] font-normal uppercase">Artist Value</span>
+                <span class="text-spotify-green font-black">NT$ ${artistTotalVal.toLocaleString()}</span>
+              </div>
+              <i id="chevron-${folderId}" data-lucide="chevron-down" class="w-5 h-5 text-[#B3B3B3] transition-transform duration-300"></i>
+            </div>
+          </div>
+          <!-- 內部珍藏卡片容器 -->
+          <div id="${folderId}" class="p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 border-t border-white/5 transition-all duration-300">
+          </div>
+        `;
+
+        targetContainer.appendChild(artistGroupDiv);
+
+        // 注入該歌手的卡片
+        const folderContainer = document.getElementById(folderId);
+        list.forEach(data => {
+          folderContainer.appendChild(createCollectionCard(data));
+        });
+      });
+    }
+
+    // D. 輔助控制函數：展開與收合歌手資料夾
+    window.toggleArtistFolder = (folderId) => {
+      const folder = document.getElementById(folderId);
+      const chevron = document.getElementById(`chevron-${folderId}`);
+      
+      if (folder.classList.contains('hidden')) {
+        folder.classList.remove('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+      } else {
+        folder.classList.add('hidden');
+        chevron.style.transform = 'rotate(-90deg)';
+      }
+    };
+
+    // E. 獨立封裝生成單張珍藏卡片的核心 DOM 結構 (引進媒介專屬幻彩邊框與標籤)
+    function createCollectionCard(data) {
+      const card = document.createElement('div');
+      const style = mediumStyles[data.type] || mediumStyles['其他'];
+      
+      card.className = `bg-[#131317] p-4 rounded-xl border border-white/5 ${style.border} transition-all duration-500 group card-shadow cursor-pointer h-full flex flex-col justify-between`;
+      
+      card.onclick = (e) => {
+        if (e.target.closest('.delete-btn')) return;
+        playPreview(data.title, data.artist, data.image);
+      };
+
+      card.innerHTML = `
+        <div class="aspect-square bg-zinc-800 rounded-md mb-4 overflow-hidden relative shadow-lg shrink-0 border border-white/5">
+          ${data.image ? `<img src="${data.image}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center"><i data-lucide="music" class="text-white/10 w-12 h-12"></i></div>`}
+          
+          <!-- 刪除按鈕 (Hover 顯現) -->
+          <button class="delete-btn absolute top-2 right-2 p-2 bg-black/70 hover:bg-red-600 rounded-full text-white/80 hover:text-white transition-all opacity-0 group-hover:opacity-100 z-20" onclick="handleDeleteItem('${data.id}')">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+
+          <!-- 炫彩播放按鈕 -->
+          <div class="absolute bottom-2 right-2 w-10 h-10 bg-spotify-green rounded-full flex items-center justify-center text-black opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all shadow-[0_0_15px_rgba(29,185,84,0.4)] z-10">
+             <i data-lucide="play" class="fill-current w-5 h-5 ml-0.5"></i>
+          </div>
+        </div>
+        <div>
+          <h5 class="text-sm font-bold truncate text-white mb-0.5" title="${data.title}">${data.title}</h5>
+          <p class="text-xs text-[#B3B3B3] truncate mb-2">${data.artist}</p>
+        </div>
+        <div class="flex items-center justify-between mt-auto pt-2">
+          <!-- 媒介專屬色彩標籤 -->
+          <span class="text-[9px] ${style.badge} px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border border-transparent">${data.type}</span>
+          <span class="text-xs font-black ${style.text}">NT$ ${data.value.toLocaleString()}</span>
+        </div>
+      `;
+      return card;
     }
 
     // 刪除特定收藏
@@ -677,7 +935,7 @@
     window.handleSearchFilter = () => {
       const queryText = document.getElementById('search-input').value.toLowerCase().trim();
       if (!queryText) {
-        renderCollectionGrid(localCollectionsData);
+        renderMasterView(localCollectionsData);
         return;
       }
 
@@ -685,7 +943,7 @@
         item.title.toLowerCase().includes(queryText) || 
         item.artist.toLowerCase().includes(queryText)
       );
-      renderCollectionGrid(filtered);
+      renderMasterView(filtered);
     };
 
     // 新增收藏表單提交處理
